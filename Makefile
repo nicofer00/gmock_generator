@@ -51,15 +51,15 @@ endif
 # If no test case filter is defined, use wildcard filter to run all of them.
 CASES ?= *
 GCOVR = gcovr
-GCOVR_FLAGS = --exclude-unreachable-branches --exclude-throw-branches -r .$(DELIM)$(BUILD_DIR) -f .*\.cpp -e ./test/.* -e .*\.h --html-details
+GCOVR_FLAGS = --exclude-unreachable-branches --exclude-throw-branches -r .$(DELIM)$(BUILD_DIR) -f .*\.cpp -e ./test/.* -e .*\.h --html-details $(GCOVR_OUTPUT_DIR)$(DELIM)coverage.html
 GCOVR_OUTPUT_DIR = .$(DELIM)$(BUILD_DIR)$(DELIM)gcov
-PROJECT_NAME ?= gmock_generator
+PROJECT_NAME ?= gmock_gen_tester
 export PROJECT_NAME GCOVR_OUTPUT_DIR GCOVR_FLAGS GCOVR DELIM
 ################################################
 # Build Commands
 ################################################
 define make_test
-	@$(CMAKE) -S . -B $(BUILD_DIR) -G $(GEN_NAME) -DTEST:BOOL=1
+	@$(CMAKE) -S . -B $(BUILD_DIR) -G $(GEN_NAME) -DTEST:BOOL=1 -DPYTHON="$(VENV)$(DELIM)python"
 	@$(CMAKE) --build $(BUILD_DIR)
 endef
 
@@ -68,19 +68,34 @@ define run_test
 endef
 
 define coverage
-	@@$(VENV)/python -m $(GCOVR) $(GCOVR_FLAGS)
+	@$(VENV)$(DELIM)python -m $(GCOVR) $(GCOVR_FLAGS)
 endef
 
-all:$(BUILD_DIR)
+all:$(BUILD_DIR) venv
 	$(call make_test)
 	$(call run_test)
 	$(call coverage)
 
-test:
+test: $(BUILD_DIR) venv
+	$(call make_test)
 	$(call run_test)
 
-report:
+report: venv
 	$(call coverage)
+
+mock: venv
+	@$(VENV)$(DELIM)python scripts$(DELIM)gmock_gen.py $(FILE) $(BUILD_DIR)$(DELIM)mocks
+
+simple-test: $(BUILD_DIR) venv
+	cmake -S . -B $(BUILD_DIR) -DPYTHON="$(VENV)$(DELIM)python"
+	cmake --build $(BUILD_DIR)
+	cd $(BUILD_DIR) && .$(DELIM)$(PROJECT_NAME)$(EXE)
+
+lint: venv
+	$(VENV)$(DELIM)black .
+
+lint-check: venv
+	$(VENV)$(DELIM)black --check --verbose -- .
 
 clean:
 	@$(RM) $(BUILD_DIR)
@@ -91,10 +106,12 @@ $(BUILD_DIR):
 ifeq ("$(wildcard $(BUILD_DIR))","")
 	@$(MKDIR) $(BUILD_DIR)
 	@$(MKDIR) $(BUILD_DIR)$(DELIM)gcov
+	@$(MKDIR) $(BUILD_DIR)$(DELIM)mocks
 else
 	@$(RM) $(BUILD_DIR)
 	@$(MKDIR) $(BUILD_DIR)
 	@$(MKDIR) $(BUILD_DIR)$(DELIM)gcov
+	@$(MKDIR) $(BUILD_DIR)$(DELIM)mocks
 endif
 
 include Makefile.venv

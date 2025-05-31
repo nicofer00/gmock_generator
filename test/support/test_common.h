@@ -29,7 +29,8 @@ using ::testing::WithArg;           \
 using ::testing::Assign;            \
 using ::testing::Invoke;            \
 using ::testing::Throw;             \
-using ::testing::DoAll;
+using ::testing::DoAll;             \
+using ::testing::ReturnRef;
 
 #define LOCAL_FILE_PATH(name) std::filesystem::path(__FILE__).parent_path().string().append("/" #name)
 #define SUPPORT_FILE_PATH(name) std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().string().append("/support/" #name)
