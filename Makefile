@@ -82,6 +82,20 @@ test:
 report:
 	$(call coverage)
 
+mock:
+	@python3 .$(DELIM)test$(DELIM)scripts$(DELIM)gmock_gen.py $(FILE) .$(DELIM)test$(DELIM)mocks
+
+simple-test: $(BUILD_DIR) venv
+	cmake -S . -B build
+	cmake --build build
+	cd build && ctest
+
+lint:
+	black scripts/
+
+lint-check:
+	black --check --verbose -- scripts/
+
 clean:
 	@$(RM) $(BUILD_DIR)
 	@$(RM) $(VENVDIR)
@@ -91,10 +105,12 @@ $(BUILD_DIR):
 ifeq ("$(wildcard $(BUILD_DIR))","")
 	@$(MKDIR) $(BUILD_DIR)
 	@$(MKDIR) $(BUILD_DIR)$(DELIM)gcov
+	@$(MKDIR) $(BUILD_DIR)$(DELIM)mocks
 else
 	@$(RM) $(BUILD_DIR)
 	@$(MKDIR) $(BUILD_DIR)
 	@$(MKDIR) $(BUILD_DIR)$(DELIM)gcov
+	@$(MKDIR) $(BUILD_DIR)$(DELIM)mocks
 endif
 
 include Makefile.venv
