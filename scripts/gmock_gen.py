@@ -263,7 +263,11 @@ class GMockMethodHandler:
         return ret
 
     def get_return_type(self, scope: cxx.Method):
-        return scope.return_type.typename.format()
+        try:
+            return scope.return_type.typename.format()
+        except AttributeError:
+            # If return_type is a pointer or reference type cant expand typename directly
+            return scope.return_type.format()
 
     def get_parameters(self, scope: cxx.Method):
         parameters = ""
